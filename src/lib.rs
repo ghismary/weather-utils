@@ -8,47 +8,116 @@ use micromath::F32Ext;
 #[cfg(not(feature = "no-std"))]
 extern crate std;
 
-/// The temperature unit to use in the measurements.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub enum TemperatureUnit {
-    #[default]
-    /// Temperature in °C.
-    Celcius,
-    /// Temperature in °F.
-    Farenheit,
+/// Trait defining the different ways to get a temperature.
+pub trait TemperatureUnit {
+    /// Get the temperature in degrees Celcius (°C).
+    fn celcius(&self) -> f32;
+    /// Get the temperature in degrees Farenheit (°F).
+    fn farenheit(&self) -> f32;
 }
+
+/// The degrees Celcius temperature unit.
+pub struct Celcius {
+    value: f32,
+}
+
+impl TemperatureUnit for Celcius {
+    fn celcius(&self) -> f32 {
+        self.value
+    }
+
+    fn farenheit(&self) -> f32 {
+        convert_celcius_to_farenheit(self.value)
+    }
+}
+
+/// The degrees Farenheit temperature unit.
+pub struct Farenheit {
+    value: f32,
+}
+
+impl TemperatureUnit for Farenheit {
+    fn celcius(&self) -> f32 {
+        convert_farenheit_to_celcius(self.value)
+    }
+
+    fn farenheit(&self) -> f32 {
+        self.value
+    }
+}
+
+/// The temperature (either in °C, or in °F).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Temperature<U: TemperatureUnit> {
+    value: U,
+}
+
+impl<U: TemperatureUnit> Temperature<U> {
+    /// Get the temperature value in degrees Celcius (°C).
+    pub fn celcius(&self) -> f32 {
+        self.value.celcius()
+    }
+
+    /// Get the temperature value in degrees Farenheit (°F).
+    pub fn farenheit(&self) -> f32 {
+        self.value.farenheit()
+    }
+}
+
+impl Temperature<Celcius> {
+    /// Create a Celcius temperature.
+    pub fn new(value: f32) -> Temperature<Celcius> {
+        Temperature {
+            value: Celcius { value },
+        }
+    }
+}
+
+impl Temperature<Farenheit> {
+    /// Create a Farenheit temperature.
+    pub fn new(value: f32) -> Temperature<Farenheit> {
+        Temperature {
+            value: Farenheit { value },
+        }
+    }
+}
+
+/// The relative humidity type (in %).
+pub type RelativeHumidity = f32;
+
+/// The absolute humidity type (in g/m³).
+pub type AbsoluteHumidity = f32;
+
+/// The barometric pressure type (in hPa).
+pub type BarometricPressure = f32;
+
+/// The altitude type (in m).
+pub type Altitude = f32;
 
 /// The combination of the temperature and the relative humidity.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct TemperatureAndRelativeHumidity {
+pub struct TemperatureAndRelativeHumidity<U: TemperatureUnit> {
     /// The relative humidity (in %).
-    pub relative_humidity: f32,
-    /// The temperature (either in °C or °F according to the temperature unit given in the
-    /// [temperature_unit](TemperatureAndRelativeHumidity::temperature_unit) field).
-    pub temperature: f32,
-    /// The temperature unit used for the measurement.
-    pub temperature_unit: TemperatureUnit,
+    pub relative_humidity: RelativeHumidity,
+    /// The temperature (either in °C or °F).
+    pub temperature: Temperature<U>,
 }
 
 /// The combination of the temperature and the barometric pressure.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct TemperatureAndPressure {
+pub struct TemperatureAndPressure<U: TemperatureUnit> {
     /// The barometric pressure (in hPa).
-    pub pressure: f32,
-    /// The temperature (either in °C or °F according to the temperature unit given in the
-    /// [temperature_unit](TemperatureAndPressure::temperature_unit) field).
-    pub temperature: f32,
-    /// The temperature unit used for the measurement.
-    pub temperature_unit: TemperatureUnit,
+    pub pressure: BarometricPressure,
+    /// The temperature (either in °C or °F).
+    pub temperature: Temperature<U>,
 }
 
 /// Computes the absolute humidity value (in g/m³), given the temperature and
 /// the relative humidity.
-pub fn compute_absolute_humidity(measurement: TemperatureAndRelativeHumidity) -> f32 {
-    let temperature = match measurement.temperature_unit {
-        TemperatureUnit::Celcius => measurement.temperature,
-        TemperatureUnit::Farenheit => convert_farenheit_to_celcius(measurement.temperature),
-    };
+pub fn compute_absolute_humidity<U: TemperatureUnit>(
+    measurement: TemperatureAndRelativeHumidity<U>,
+) -> AbsoluteHumidity {
+    let temperature = measurement.temperature.celcius();
     (6.112
         * ((17.67 * temperature) / (temperature + 243.5)).exp()
         * measurement.relative_humidity
@@ -58,11 +127,8 @@ pub fn compute_absolute_humidity(measurement: TemperatureAndRelativeHumidity) ->
 
 /// Compute the altitude (in m), given the barometric pressure and the
 /// temperature.
-pub fn compute_altitude(measurement: TemperatureAndPressure) -> f32 {
-    let temperature = match measurement.temperature_unit {
-        TemperatureUnit::Celcius => measurement.temperature,
-        TemperatureUnit::Farenheit => convert_farenheit_to_celcius(measurement.temperature),
-    };
+pub fn compute_altitude<U: TemperatureUnit>(measurement: TemperatureAndPressure<U>) -> Altitude {
+    let temperature = measurement.temperature.celcius();
     ((1_013.25 / measurement.pressure).powf(1.0 / 5.257) - 1.0) * (temperature + 273.15) / 0.0065
 }
 
@@ -85,8 +151,7 @@ mod tests {
         assert!(
             (crate::compute_absolute_humidity(TemperatureAndRelativeHumidity {
                 relative_humidity: 45.59,
-                temperature: 21.18,
-                temperature_unit: TemperatureUnit::Celcius
+                temperature: Temperature::<Celcius>::new(21.18)
             }) - 8.43)
                 .abs()
                 < 0.01
@@ -94,8 +159,7 @@ mod tests {
         assert!(
             (crate::compute_absolute_humidity(TemperatureAndRelativeHumidity {
                 relative_humidity: 45.59,
-                temperature: 70.12,
-                temperature_unit: TemperatureUnit::Farenheit
+                temperature: Temperature::<Farenheit>::new(70.12)
             }) - 8.43)
                 .abs()
                 < 0.01
@@ -103,8 +167,7 @@ mod tests {
         assert!(
             (crate::compute_absolute_humidity(TemperatureAndRelativeHumidity {
                 relative_humidity: 34.71,
-                temperature: 2.93,
-                temperature_unit: TemperatureUnit::Celcius
+                temperature: Temperature::<Celcius>::new(2.93)
             }) - 2.06)
                 .abs()
                 < 0.01
@@ -112,8 +175,7 @@ mod tests {
         assert!(
             (crate::compute_absolute_humidity(TemperatureAndRelativeHumidity {
                 relative_humidity: 74.91,
-                temperature: 107.7,
-                temperature_unit: TemperatureUnit::Farenheit
+                temperature: Temperature::<Farenheit>::new(107.7)
             }) - 42.49)
                 .abs()
                 < 0.01
@@ -125,8 +187,7 @@ mod tests {
         assert!(
             (crate::compute_altitude(TemperatureAndPressure {
                 pressure: 991.32,
-                temperature: 20.55,
-                temperature_unit: TemperatureUnit::Celcius
+                temperature: Temperature::<Celcius>::new(20.55)
             }) - 188.46)
                 .abs()
                 < 0.01
@@ -134,8 +195,7 @@ mod tests {
         assert!(
             (crate::compute_altitude(TemperatureAndPressure {
                 pressure: 1013.25,
-                temperature: 17.93,
-                temperature_unit: TemperatureUnit::Celcius
+                temperature: Temperature::<Celcius>::new(17.93)
             }) - 0.0)
                 .abs()
                 < 0.01
@@ -143,8 +203,7 @@ mod tests {
         assert!(
             (crate::compute_altitude(TemperatureAndPressure {
                 pressure: 1013.25,
-                temperature: 37.5,
-                temperature_unit: TemperatureUnit::Celcius
+                temperature: Temperature::<Celcius>::new(37.5)
             }) - 0.0)
                 .abs()
                 < 0.01
@@ -152,8 +211,7 @@ mod tests {
         assert!(
             (crate::compute_altitude(TemperatureAndPressure {
                 pressure: 962.81,
-                temperature: 19.37,
-                temperature_unit: TemperatureUnit::Celcius
+                temperature: Temperature::<Celcius>::new(19.37)
             }) - 439.25)
                 .abs()
                 < 0.01
