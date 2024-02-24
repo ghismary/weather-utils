@@ -14,7 +14,7 @@ pub mod unit;
 /// The temperature (either in °C, or in °F).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Temperature<U: unit::TemperatureUnit> {
-    value: U,
+    pub(crate) value: U,
 }
 
 impl<U: unit::TemperatureUnit> Temperature<U> {
@@ -38,12 +38,24 @@ impl Temperature<unit::Celcius> {
     }
 }
 
+impl From<Temperature<unit::Farenheit>> for Temperature<unit::Celcius> {
+    fn from(value: Temperature<unit::Farenheit>) -> Self {
+        Self::new(value.celcius())
+    }
+}
+
 impl Temperature<unit::Farenheit> {
     /// Create a Farenheit temperature.
     pub fn new(value: f32) -> Temperature<unit::Farenheit> {
         Temperature {
             value: unit::Farenheit { value },
         }
+    }
+}
+
+impl From<Temperature<unit::Celcius>> for Temperature<unit::Farenheit> {
+    fn from(value: Temperature<unit::Celcius>) -> Self {
+        Self::new(value.farenheit())
     }
 }
 
@@ -185,6 +197,75 @@ mod tests {
             }
             .altitude()
                 - 439.25)
+                .abs()
+                < 0.01
+        );
+    }
+
+    #[test]
+    fn convert_temperatures() {
+        assert!(
+            (Temperature::<Farenheit>::from(Temperature::<Celcius>::new(0.0))
+                .value
+                .value
+                - 32.0)
+                .abs()
+                < 0.01
+        );
+        assert!(
+            (Temperature::<Farenheit>::from(Temperature::<Celcius>::new(15.73))
+                .value
+                .value
+                - 60.31)
+                .abs()
+                < 0.01
+        );
+        assert!(
+            (Temperature::<Farenheit>::from(Temperature::<Celcius>::new(-7.49))
+                .value
+                .value
+                - 18.52)
+                .abs()
+                < 0.01
+        );
+        assert!(
+            (Temperature::<Farenheit>::from(Temperature::<Celcius>::new(37.5))
+                .value
+                .value
+                - 99.5)
+                .abs()
+                < 0.01
+        );
+
+        assert!(
+            (Temperature::<Celcius>::from(Temperature::<Farenheit>::new(32.0))
+                .value
+                .value
+                - 0.0)
+                .abs()
+                < 0.01
+        );
+        assert!(
+            (Temperature::<Celcius>::from(Temperature::<Farenheit>::new(60.31))
+                .value
+                .value
+                - 15.73)
+                .abs()
+                < 0.01
+        );
+        assert!(
+            (Temperature::<Celcius>::from(Temperature::<Farenheit>::new(18.52))
+                .value
+                .value
+                - -7.49)
+                .abs()
+                < 0.01
+        );
+        assert!(
+            (Temperature::<Celcius>::from(Temperature::<Farenheit>::new(99.5))
+                .value
+                .value
+                - 37.5)
                 .abs()
                 < 0.01
         );
