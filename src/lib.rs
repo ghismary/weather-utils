@@ -92,20 +92,105 @@ impl<U: unit::TemperatureUnit> TemperatureAndRelativeHumidity<U> {
     }
 }
 
+impl TemperatureAndRelativeHumidity<unit::Celcius> {
+    /// Create a combination of Celcius temperature and relative humidity.
+    pub fn new(
+        temperature: f32,
+        relative_humidity: f32,
+    ) -> TemperatureAndRelativeHumidity<unit::Celcius> {
+        TemperatureAndRelativeHumidity {
+            relative_humidity,
+            temperature: Temperature::<unit::Celcius>::new(temperature),
+        }
+    }
+}
+
+impl From<TemperatureAndRelativeHumidity<unit::Farenheit>>
+    for TemperatureAndRelativeHumidity<unit::Celcius>
+{
+    fn from(value: TemperatureAndRelativeHumidity<unit::Farenheit>) -> Self {
+        Self::new(value.temperature.celcius(), value.relative_humidity)
+    }
+}
+
+impl TemperatureAndRelativeHumidity<unit::Farenheit> {
+    /// Create a combination of Farenheit temperature and relative humidity.
+    pub fn new(
+        temperature: f32,
+        relative_humidity: f32,
+    ) -> TemperatureAndRelativeHumidity<unit::Farenheit> {
+        TemperatureAndRelativeHumidity {
+            relative_humidity,
+            temperature: Temperature::<unit::Farenheit>::new(temperature),
+        }
+    }
+}
+
+impl From<TemperatureAndRelativeHumidity<unit::Celcius>>
+    for TemperatureAndRelativeHumidity<unit::Farenheit>
+{
+    fn from(value: TemperatureAndRelativeHumidity<unit::Celcius>) -> Self {
+        Self::new(value.temperature.farenheit(), value.relative_humidity)
+    }
+}
+
 /// The combination of the temperature and the barometric pressure.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct TemperatureAndPressure<U: unit::TemperatureUnit> {
+pub struct TemperatureAndBarometricPressure<U: unit::TemperatureUnit> {
     /// The barometric pressure (in hPa).
-    pub pressure: BarometricPressure,
+    pub barometric_pressure: BarometricPressure,
     /// The temperature (either in °C or °F).
     pub temperature: Temperature<U>,
 }
 
-impl<U: unit::TemperatureUnit> TemperatureAndPressure<U> {
+impl<U: unit::TemperatureUnit> TemperatureAndBarometricPressure<U> {
     /// Compute the altitude (in m).
     pub fn altitude(&self) -> Altitude {
         let temperature = self.temperature.celcius();
-        ((1_013.25 / self.pressure).powf(1.0 / 5.257) - 1.0) * (temperature + 273.15) / 0.0065
+        ((1_013.25 / self.barometric_pressure).powf(1.0 / 5.257) - 1.0) * (temperature + 273.15)
+            / 0.0065
+    }
+}
+
+impl TemperatureAndBarometricPressure<unit::Celcius> {
+    /// Create a combination of Celcius temperature and barometric pressure.
+    pub fn new(
+        temperature: f32,
+        barometric_pressure: f32,
+    ) -> TemperatureAndBarometricPressure<unit::Celcius> {
+        TemperatureAndBarometricPressure {
+            barometric_pressure,
+            temperature: Temperature::<unit::Celcius>::new(temperature),
+        }
+    }
+}
+
+impl From<TemperatureAndBarometricPressure<unit::Farenheit>>
+    for TemperatureAndBarometricPressure<unit::Celcius>
+{
+    fn from(value: TemperatureAndBarometricPressure<unit::Farenheit>) -> Self {
+        Self::new(value.temperature.celcius(), value.barometric_pressure)
+    }
+}
+
+impl TemperatureAndBarometricPressure<unit::Farenheit> {
+    /// Create a combination of Farenheit temperature and barometric pressure.
+    pub fn new(
+        temperature: f32,
+        barometric_pressure: f32,
+    ) -> TemperatureAndBarometricPressure<unit::Farenheit> {
+        TemperatureAndBarometricPressure {
+            barometric_pressure,
+            temperature: Temperature::<unit::Farenheit>::new(temperature),
+        }
+    }
+}
+
+impl From<TemperatureAndBarometricPressure<unit::Celcius>>
+    for TemperatureAndBarometricPressure<unit::Farenheit>
+{
+    fn from(value: TemperatureAndBarometricPressure<unit::Celcius>) -> Self {
+        Self::new(value.temperature.farenheit(), value.barometric_pressure)
     }
 }
 
@@ -117,41 +202,25 @@ mod tests {
     #[test]
     fn compute_absolute_humidity() {
         assert!(
-            (TemperatureAndRelativeHumidity {
-                relative_humidity: 45.59,
-                temperature: Temperature::<Celcius>::new(21.18)
-            }
-            .absolute_humidity()
+            (TemperatureAndRelativeHumidity::<Celcius>::new(21.18, 45.59).absolute_humidity()
                 - 8.43)
                 .abs()
                 < 0.01
         );
         assert!(
-            (TemperatureAndRelativeHumidity {
-                relative_humidity: 45.59,
-                temperature: Temperature::<Farenheit>::new(70.12)
-            }
-            .absolute_humidity()
+            (TemperatureAndRelativeHumidity::<Farenheit>::new(70.12, 45.59).absolute_humidity()
                 - 8.43)
                 .abs()
                 < 0.01
         );
         assert!(
-            (TemperatureAndRelativeHumidity {
-                relative_humidity: 34.71,
-                temperature: Temperature::<Celcius>::new(2.93)
-            }
-            .absolute_humidity()
+            (TemperatureAndRelativeHumidity::<Celcius>::new(2.93, 34.71).absolute_humidity()
                 - 2.06)
                 .abs()
                 < 0.01
         );
         assert!(
-            (TemperatureAndRelativeHumidity {
-                relative_humidity: 74.91,
-                temperature: Temperature::<Farenheit>::new(107.7)
-            }
-            .absolute_humidity()
+            (TemperatureAndRelativeHumidity::<Farenheit>::new(107.7, 74.91).absolute_humidity()
                 - 42.49)
                 .abs()
                 < 0.01
@@ -161,42 +230,22 @@ mod tests {
     #[test]
     fn compute_altitude() {
         assert!(
-            (TemperatureAndPressure {
-                pressure: 991.32,
-                temperature: Temperature::<Celcius>::new(20.55)
-            }
-            .altitude()
-                - 188.46)
+            (TemperatureAndBarometricPressure::<Celcius>::new(20.55, 991.32).altitude() - 188.46)
                 .abs()
                 < 0.01
         );
         assert!(
-            (TemperatureAndPressure {
-                pressure: 1013.25,
-                temperature: Temperature::<Celcius>::new(17.93)
-            }
-            .altitude()
-                - 0.0)
+            (TemperatureAndBarometricPressure::<Celcius>::new(17.93, 1013.25).altitude() - 0.0)
                 .abs()
                 < 0.01
         );
         assert!(
-            (TemperatureAndPressure {
-                pressure: 1013.25,
-                temperature: Temperature::<Celcius>::new(37.5)
-            }
-            .altitude()
-                - 0.0)
+            (TemperatureAndBarometricPressure::<Celcius>::new(37.5, 1013.25).altitude() - 0.0)
                 .abs()
                 < 0.01
         );
         assert!(
-            (TemperatureAndPressure {
-                pressure: 962.81,
-                temperature: Temperature::<Celcius>::new(19.37)
-            }
-            .altitude()
-                - 439.25)
+            (TemperatureAndBarometricPressure::<Celcius>::new(19.37, 962.81).altitude() - 439.25)
                 .abs()
                 < 0.01
         );
