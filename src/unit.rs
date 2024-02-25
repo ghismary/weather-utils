@@ -7,6 +7,7 @@ pub trait TemperatureUnit {
 }
 
 /// The degrees Celcius temperature unit.
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Celcius {
     pub(crate) value: f32,
 }
@@ -22,6 +23,7 @@ impl TemperatureUnit for Celcius {
 }
 
 /// The degrees Farenheit temperature unit.
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Farenheit {
     pub(crate) value: f32,
 }
