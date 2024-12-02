@@ -2,14 +2,14 @@
 name = "weather-utils"
 version = "0.2.0"
 authors = ["Ghislain MARY <ghislain@ghislainmary.fr>"]
-repository = "https://gitlab.com/ghislainmary/weather-utils"
+repository = "https://github.com/ghismary/weather-utils"
 license = "MIT OR Apache-2.0"
 description = "Set of common and useful weather-related computations."
 documentation = "https://docs.rs/weather-utils/"
 readme = "README.md"
 keywords = ["weather", "dew-point", "heat-index", "conversion", "temperature"]
 categories = ["embedded", "no-std", "science"]
-homepage = "https://gitlab.com/ghislainmary/weather-utils"
+homepage = "https://github.com/ghismary/weather-utils"
 include = ["/**/*.rs", "/Cargo.toml", "README.md"]
 edition = "2021"
 
