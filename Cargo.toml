@@ -1,6 +1,6 @@
 [package]
 name = "weather-utils"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Ghislain MARY <ghislain@ghislainmary.fr>"]
 repository = "https://github.com/ghismary/weather-utils"
 license = "MIT OR Apache-2.0"
