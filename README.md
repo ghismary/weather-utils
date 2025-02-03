@@ -1,4 +1,6 @@
 [![crates.io](https://img.shields.io/crates/v/weather-utils.svg)](https://crates.io/crates/weather-utils)
+[![Github status](https://github.com/ghismary/weather-utils/actions/workflows/general.yml/badge.svg)](https://github.com/ghismary/weather-utils)
+[![codecov](https://codecov.io/gh/ghismary/weather-utils/graph/badge.svg?token=EBQTUEQUK1)](https://codecov.io/gh/ghismary/weather-utils)
 [![License](https://img.shields.io/crates/l/weather-utils.svg)](https://crates.io/crates/weather-utils)
 [![Documentation](https://docs.rs/weather-utils/badge.svg)](https://docs.rs/weather-utils)
 
