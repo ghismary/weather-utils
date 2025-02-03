@@ -23,9 +23,9 @@ impl<U: unit::TemperatureUnit> Temperature<U> {
         self.value.celsius()
     }
 
-    /// Get the temperature value in degrees Farenheit (°F).
-    pub fn farenheit(&self) -> f32 {
-        self.value.farenheit()
+    /// Get the temperature value in degrees Fahrenheit (°F).
+    pub fn fahrenheit(&self) -> f32 {
+        self.value.fahrenheit()
     }
 }
 
@@ -38,24 +38,24 @@ impl Temperature<unit::Celsius> {
     }
 }
 
-impl From<Temperature<unit::Farenheit>> for Temperature<unit::Celsius> {
-    fn from(value: Temperature<unit::Farenheit>) -> Self {
+impl From<Temperature<unit::Fahrenheit>> for Temperature<unit::Celsius> {
+    fn from(value: Temperature<unit::Fahrenheit>) -> Self {
         Self::new(value.celsius())
     }
 }
 
-impl Temperature<unit::Farenheit> {
-    /// Create a Farenheit temperature.
-    pub fn new(value: f32) -> Temperature<unit::Farenheit> {
+impl Temperature<unit::Fahrenheit> {
+    /// Create a Fahrenheit temperature.
+    pub fn new(value: f32) -> Temperature<unit::Fahrenheit> {
         Temperature {
-            value: unit::Farenheit { value },
+            value: unit::Fahrenheit { value },
         }
     }
 }
 
-impl From<Temperature<unit::Celsius>> for Temperature<unit::Farenheit> {
+impl From<Temperature<unit::Celsius>> for Temperature<unit::Fahrenheit> {
     fn from(value: Temperature<unit::Celsius>) -> Self {
-        Self::new(value.farenheit())
+        Self::new(value.fahrenheit())
     }
 }
 
@@ -105,32 +105,32 @@ impl TemperatureAndRelativeHumidity<unit::Celsius> {
     }
 }
 
-impl From<TemperatureAndRelativeHumidity<unit::Farenheit>>
+impl From<TemperatureAndRelativeHumidity<unit::Fahrenheit>>
     for TemperatureAndRelativeHumidity<unit::Celsius>
 {
-    fn from(value: TemperatureAndRelativeHumidity<unit::Farenheit>) -> Self {
+    fn from(value: TemperatureAndRelativeHumidity<unit::Fahrenheit>) -> Self {
         Self::new(value.temperature.celsius(), value.relative_humidity)
     }
 }
 
-impl TemperatureAndRelativeHumidity<unit::Farenheit> {
-    /// Create a combination of Farenheit temperature and relative humidity.
+impl TemperatureAndRelativeHumidity<unit::Fahrenheit> {
+    /// Create a combination of Fahrenheit temperature and relative humidity.
     pub fn new(
         temperature: f32,
         relative_humidity: f32,
-    ) -> TemperatureAndRelativeHumidity<unit::Farenheit> {
+    ) -> TemperatureAndRelativeHumidity<unit::Fahrenheit> {
         TemperatureAndRelativeHumidity {
             relative_humidity,
-            temperature: Temperature::<unit::Farenheit>::new(temperature),
+            temperature: Temperature::<unit::Fahrenheit>::new(temperature),
         }
     }
 }
 
 impl From<TemperatureAndRelativeHumidity<unit::Celsius>>
-    for TemperatureAndRelativeHumidity<unit::Farenheit>
+    for TemperatureAndRelativeHumidity<unit::Fahrenheit>
 {
     fn from(value: TemperatureAndRelativeHumidity<unit::Celsius>) -> Self {
-        Self::new(value.temperature.farenheit(), value.relative_humidity)
+        Self::new(value.temperature.fahrenheit(), value.relative_humidity)
     }
 }
 
@@ -165,32 +165,32 @@ impl TemperatureAndBarometricPressure<unit::Celsius> {
     }
 }
 
-impl From<TemperatureAndBarometricPressure<unit::Farenheit>>
+impl From<TemperatureAndBarometricPressure<unit::Fahrenheit>>
     for TemperatureAndBarometricPressure<unit::Celsius>
 {
-    fn from(value: TemperatureAndBarometricPressure<unit::Farenheit>) -> Self {
+    fn from(value: TemperatureAndBarometricPressure<unit::Fahrenheit>) -> Self {
         Self::new(value.temperature.celsius(), value.barometric_pressure)
     }
 }
 
-impl TemperatureAndBarometricPressure<unit::Farenheit> {
-    /// Create a combination of Farenheit temperature and barometric pressure.
+impl TemperatureAndBarometricPressure<unit::Fahrenheit> {
+    /// Create a combination of Fahrenheit temperature and barometric pressure.
     pub fn new(
         temperature: f32,
         barometric_pressure: f32,
-    ) -> TemperatureAndBarometricPressure<unit::Farenheit> {
+    ) -> TemperatureAndBarometricPressure<unit::Fahrenheit> {
         TemperatureAndBarometricPressure {
             barometric_pressure,
-            temperature: Temperature::<unit::Farenheit>::new(temperature),
+            temperature: Temperature::<unit::Fahrenheit>::new(temperature),
         }
     }
 }
 
 impl From<TemperatureAndBarometricPressure<unit::Celsius>>
-    for TemperatureAndBarometricPressure<unit::Farenheit>
+    for TemperatureAndBarometricPressure<unit::Fahrenheit>
 {
     fn from(value: TemperatureAndBarometricPressure<unit::Celsius>) -> Self {
-        Self::new(value.temperature.farenheit(), value.barometric_pressure)
+        Self::new(value.temperature.fahrenheit(), value.barometric_pressure)
     }
 }
 
@@ -208,7 +208,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (TemperatureAndRelativeHumidity::<Farenheit>::new(70.12, 45.59).absolute_humidity()
+            (TemperatureAndRelativeHumidity::<Fahrenheit>::new(70.12, 45.59).absolute_humidity()
                 - 8.43)
                 .abs()
                 < 0.01
@@ -220,7 +220,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (TemperatureAndRelativeHumidity::<Farenheit>::new(107.7, 74.91).absolute_humidity()
+            (TemperatureAndRelativeHumidity::<Fahrenheit>::new(107.7, 74.91).absolute_humidity()
                 - 42.49)
                 .abs()
                 < 0.01
@@ -254,7 +254,7 @@ mod tests {
     #[test]
     fn convert_temperatures() {
         assert!(
-            (Temperature::<Farenheit>::from(Temperature::<Celsius>::new(0.0))
+            (Temperature::<Fahrenheit>::from(Temperature::<Celsius>::new(0.0))
                 .value
                 .value
                 - 32.0)
@@ -262,7 +262,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (Temperature::<Farenheit>::from(Temperature::<Celsius>::new(15.73))
+            (Temperature::<Fahrenheit>::from(Temperature::<Celsius>::new(15.73))
                 .value
                 .value
                 - 60.31)
@@ -270,7 +270,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (Temperature::<Farenheit>::from(Temperature::<Celsius>::new(-7.49))
+            (Temperature::<Fahrenheit>::from(Temperature::<Celsius>::new(-7.49))
                 .value
                 .value
                 - 18.52)
@@ -278,7 +278,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (Temperature::<Farenheit>::from(Temperature::<Celsius>::new(37.5))
+            (Temperature::<Fahrenheit>::from(Temperature::<Celsius>::new(37.5))
                 .value
                 .value
                 - 99.5)
@@ -287,7 +287,7 @@ mod tests {
         );
 
         assert!(
-            (Temperature::<Celsius>::from(Temperature::<Farenheit>::new(32.0))
+            (Temperature::<Celsius>::from(Temperature::<Fahrenheit>::new(32.0))
                 .value
                 .value
                 - 0.0)
@@ -295,7 +295,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (Temperature::<Celsius>::from(Temperature::<Farenheit>::new(60.31))
+            (Temperature::<Celsius>::from(Temperature::<Fahrenheit>::new(60.31))
                 .value
                 .value
                 - 15.73)
@@ -303,7 +303,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (Temperature::<Celsius>::from(Temperature::<Farenheit>::new(18.52))
+            (Temperature::<Celsius>::from(Temperature::<Fahrenheit>::new(18.52))
                 .value
                 .value
                 - -7.49)
@@ -311,7 +311,7 @@ mod tests {
                 < 0.01
         );
         assert!(
-            (Temperature::<Celsius>::from(Temperature::<Farenheit>::new(99.5))
+            (Temperature::<Celsius>::from(Temperature::<Fahrenheit>::new(99.5))
                 .value
                 .value
                 - 37.5)
