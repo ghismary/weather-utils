@@ -22,4 +22,5 @@ approx = "0.5"
 micromath = { version = "2.1", optional = true }
 
 [dev-dependencies]
+more-asserts = "0.3"
 rstest = "0.24"
