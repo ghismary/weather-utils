@@ -26,7 +26,7 @@ even better contribute it ;-)
 ### Documentation:
 
 - [Introduction to humidity](https://www.sensirion.com/media/documents/8AB2AD38/61642ADD/Sensirion_AppNotes_Humidity_Sensors_Introduction_to_Relative_Humidit.pdf)
-- [Humidity at a glance](https://www.sensirion.com/media/documents/A419127A/6163F5FE/Sensirion_AppNotes_Humidity_Sensors_at_a_Glance.pdf)
+- [Humidity at a glance](https://sensirion.com/media/documents/A419127A/6836C0D2/Sensirion_AppNotes_Humidity_Sensors_at_a_Glance.pdf)
 
 ## License
 
