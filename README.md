@@ -20,7 +20,7 @@ even better contribute it ;-)
 - [x] Conversion from °F to °C.
 - [x] Computation of absolute humidity from temperature and relative humidity.
 - [x] Computation of altitude from barometric pressure and temperature.
-- [ ] Computation of dew point.
+- [x] Computation of dew point.
 - [ ] Computation of heat index.
 
 ### Documentation:

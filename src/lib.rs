@@ -96,10 +96,28 @@ fn calculate_absolute_humidity(temperature: f32, relative_humidity: f32) -> f32 
         / (273.15 + temperature)
 }
 
+fn calculate_dew_point_temperature(temperature: f32, relative_humidity: f32) -> f32 {
+    const M: f32 = 17.62;
+    const TN: f32 = 243.12;
+    let val = f32::ln(relative_humidity / 100.0) + ((M * temperature) / (TN + temperature));
+    (TN * val) / (M - val)
+}
+
 impl<U: unit::TemperatureUnit> TemperatureAndRelativeHumidity<U> {
     /// Computes the absolute humidity value (in g/m³).
+    /// The absolute humidity is defined by the mass of water vapor per humid air volume.
     pub fn absolute_humidity(&self) -> AbsoluteHumidity {
         calculate_absolute_humidity(self.temperature.celsius(), self.relative_humidity)
+    }
+
+    /// Computes the dew point temperature.
+    /// The dew point temperature is defined as the temperature to which the quantity of air must
+    /// be cooled down such that, at constant pressure, condensation occurs.
+    pub fn dew_point_temperature(&self) -> Temperature<unit::Celsius> {
+        Temperature::<unit::Celsius>::new(calculate_dew_point_temperature(
+            self.temperature.celsius(),
+            self.relative_humidity,
+        ))
     }
 }
 
@@ -235,6 +253,22 @@ mod tests {
             expected_absolute_humidity,
             epsilon = 0.01
         );
+    }
+
+    #[rstest]
+    #[case(TemperatureAndRelativeHumidity::<Celsius>::new(21.18, 45.59), 8.96)]
+    #[case(TemperatureAndRelativeHumidity::<Fahrenheit>::new(70.12, 45.59), 8.96)]
+    #[case(TemperatureAndRelativeHumidity::<Celsius>::new(2.93, 34.71), -11.16)]
+    #[case(TemperatureAndRelativeHumidity::<Fahrenheit>::new(107.7, 74.91), 36.67)]
+    fn test_dew_point_temperature_computation<U: TemperatureUnit>(
+        #[case] input: TemperatureAndRelativeHumidity<U>,
+        #[case] expected_dew_point_temperature: f32,
+    ) {
+        assert_relative_eq!(
+            input.dew_point_temperature().celsius(),
+            expected_dew_point_temperature,
+            epsilon = 0.01
+        )
     }
 
     #[rstest]
