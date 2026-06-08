@@ -21,7 +21,7 @@ even better contribute it ;-)
 - [x] Computation of absolute humidity from temperature and relative humidity.
 - [x] Computation of altitude from barometric pressure and temperature.
 - [x] Computation of dew point.
-- [ ] Computation of heat index.
+- [x] Computation of heat index.
 
 ### Documentation:
 

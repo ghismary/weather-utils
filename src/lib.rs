@@ -9,6 +9,8 @@ pub mod pressure;
 /// The temperature types (Celsius and Fahrenheit).
 pub mod temperature;
 
-pub use humidity::{AbsoluteHumidity, RelativeHumidity, TemperatureAndRelativeHumidity};
+pub use humidity::{
+    AbsoluteHumidity, Comfort, HeatIndex, RelativeHumidity, TemperatureAndRelativeHumidity,
+};
 pub use pressure::{Altitude, BarometricPressure, TemperatureAndBarometricPressure};
 pub use temperature::{Celsius, Fahrenheit, Temperature};
