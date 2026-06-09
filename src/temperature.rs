@@ -83,6 +83,12 @@ impl Temperature for Fahrenheit {
     }
 }
 
+impl From<f32> for Fahrenheit {
+    fn from(value: f32) -> Self {
+        Fahrenheit(value)
+    }
+}
+
 impl From<Celsius> for Fahrenheit {
     fn from(value: Celsius) -> Self {
         value.fahrenheit()
@@ -103,11 +109,32 @@ impl PartialOrd for Fahrenheit {
 
 #[cfg(test)]
 mod tests {
-    use approx::assert_relative_eq;
     use more_asserts::{assert_gt, assert_lt};
     use rstest::rstest;
 
     use super::*;
+
+    #[rstest]
+    #[case(0.0, Celsius(0.0))]
+    #[case(15.73, Celsius(15.73))]
+    #[case(-7.49, Celsius(-7.49))]
+    #[case(37.5, Celsius(37.5))]
+    fn test_celsius_from_f32(#[case] input: f32, #[case] expected_output: Celsius) {
+        let celsius: Celsius = input.into();
+        assert_eq!(celsius, expected_output);
+        assert_eq!(celsius.celsius(), celsius);
+    }
+
+    #[rstest]
+    #[case(32.0, Fahrenheit(32.0))]
+    #[case(60.31, Fahrenheit(60.31))]
+    #[case(18.52, Fahrenheit(18.52))]
+    #[case(99.5, Fahrenheit(99.5))]
+    fn test_fahrenheit_from_f32(#[case] input: f32, #[case] expected_output: Fahrenheit) {
+        let fahrenheit: Fahrenheit = input.into();
+        assert_eq!(fahrenheit, expected_output);
+        assert_eq!(fahrenheit.fahrenheit(), fahrenheit);
+    }
 
     #[rstest]
     #[case(Celsius(0.0), Fahrenheit(32.0))]
@@ -118,11 +145,9 @@ mod tests {
         #[case] input: Celsius,
         #[case] expected_output: Fahrenheit,
     ) {
-        assert_relative_eq!(
-            input.fahrenheit().value(),
-            expected_output.value(),
-            epsilon = 0.01
-        );
+        assert_eq!(input.fahrenheit(), expected_output);
+        let fahrenheit: Fahrenheit = input.into();
+        assert_eq!(fahrenheit, expected_output);
     }
 
     #[rstest]
@@ -134,11 +159,9 @@ mod tests {
         #[case] input: Fahrenheit,
         #[case] expected_output: Celsius,
     ) {
-        assert_relative_eq!(
-            input.celsius().value(),
-            expected_output.value(),
-            epsilon = 0.01
-        );
+        assert_eq!(input.celsius(), expected_output);
+        let celsius: Celsius = input.into();
+        assert_eq!(celsius, expected_output);
     }
 
     #[rstest]
