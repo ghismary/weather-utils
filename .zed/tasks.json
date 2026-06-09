@@ -1,0 +1,52 @@
+[
+  {
+    "label": "Build Debug",
+    "command": "cargo build",
+    "hide": "on_success",
+  },
+  {
+    "label": "Build Release",
+    "command": "cargo build --release",
+    "hide": "on_success",
+  },
+  {
+    "label": "Test",
+    "command": "cargo test",
+    "hide": "never",
+  },
+  {
+    "label": "Build Debug no-std",
+    "command": "cargo build --no-default-features --features no-std",
+    "hide": "on_success",
+  },
+  {
+    "label": "Build Release no-std",
+    "command": "cargo build --release --no-default-features --features no-std",
+    "hide": "on_success",
+  },
+  {
+    "label": "Test no-std",
+    "command": "cargo test --no-default-features --features no-std",
+    "hide": "never",
+  },
+  {
+    "label": "Clippy",
+    "command": "cargo clippy",
+    "hide": "never",
+  },
+  {
+    "label": "Code coverage",
+    "command": "cargo tarpaulin --workspace",
+    "hide": "never",
+  },
+  {
+    "label": "Generate documentation",
+    "command": "cargo doc --open",
+    "hide": "on_success",
+  },
+  {
+    "label": "Clean",
+    "command": "cargo clean",
+    "hide": "on_success",
+  },
+]
