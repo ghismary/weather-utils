@@ -134,7 +134,7 @@ impl<T: Temperature> TemperatureAndRelativeHumidity<T> {
 
     /// Computes the heat index.
     ///
-    /// See `HeatIndex`.
+    /// See [`HeatIndex`].
     pub fn heat_index(&self) -> HeatIndex<T> {
         const C1: f32 = -8.784_695;
         const C2: f32 = 1.611_394_2;
@@ -160,28 +160,21 @@ impl<T: Temperature> TemperatureAndRelativeHumidity<T> {
                 + C8 * temperature * relative_humidity * relative_humidity
                 + C9 * temperature * temperature * relative_humidity * relative_humidity;
             if relative_humidity < 13. && temperature > 26.7 && temperature < 44.4 {
-                heat_index += (5. / 36.)
-                    * (relative_humidity - 13.)
-                    * ((17. - (1.8 * temperature - 63.).abs()) / 17.).sqrt()
-                    - 160. / 9.;
+                heat_index -= ((13. - relative_humidity) / 4.)
+                    * ((17. - (temperature - 35.).abs()) / 17.).sqrt();
             }
             if relative_humidity > 85. && temperature > 26.7 && temperature < 30.6 {
-                heat_index +=
-                    5. * (relative_humidity - 85.) * (55. - 1.8 * temperature) / 450. - 160. / 9.;
+                heat_index += ((relative_humidity - 85.) / 10.) * ((30.6 - temperature) / 5.);
             }
         }
         HeatIndex(T::from_celsius(Celsius(heat_index)))
     }
 }
 
-impl<T: Temperature> PartialEq for TemperatureAndRelativeHumidity<T> {
+impl<T: Temperature + PartialEq> PartialEq for TemperatureAndRelativeHumidity<T> {
     fn eq(&self, other: &Self) -> bool {
         self.relative_humidity.eq(&other.relative_humidity)
-            && relative_eq!(
-                self.temperature.value(),
-                other.temperature.value(),
-                epsilon = 0.01
-            )
+            && self.temperature.eq(&other.temperature)
     }
 }
 
@@ -211,26 +204,39 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case(RelativeHumidity::new(32.0).unwrap(), RelativeHumidity::new(32.001).unwrap())]
-    #[case(RelativeHumidity::new(32.004).unwrap(), RelativeHumidity::new(32.0).unwrap())]
-    #[case(RelativeHumidity::new(60.31).unwrap(), RelativeHumidity::new(60.308).unwrap())]
+    #[case(-23.7, Err("Relative humidity must be between 0 and 100 %"))]
+    #[case(0.0, Ok(RelativeHumidity(0.0)))]
+    #[case(52.6, Ok(RelativeHumidity(52.6)))]
+    #[case(100.0, Ok(RelativeHumidity(100.0)))]
+    #[case(107.9, Err("Relative humidity must be between 0 and 100 %"))]
+    fn test_relative_humidity_creation(
+        #[case] input: f32,
+        #[case] expected_output: Result<RelativeHumidity, &'static str>,
+    ) {
+        assert_eq!(RelativeHumidity::new(input), expected_output);
+    }
+
+    #[rstest]
+    #[case(RelativeHumidity(32.0), RelativeHumidity(32.001))]
+    #[case(RelativeHumidity(32.004), RelativeHumidity(32.0))]
+    #[case(RelativeHumidity(60.31), RelativeHumidity(60.308))]
     fn test_relative_humidity_eq(#[case] a: RelativeHumidity, #[case] b: RelativeHumidity) {
         assert_eq!(a, b);
     }
 
     #[rstest]
-    #[case(RelativeHumidity::new(0.0).unwrap(), RelativeHumidity::new(10.3).unwrap())]
-    #[case(RelativeHumidity::new(0.0).unwrap(), RelativeHumidity::new(0.09).unwrap())]
-    #[case(RelativeHumidity::new(98.5).unwrap(), RelativeHumidity::new(99.9).unwrap())]
+    #[case(RelativeHumidity(0.0), RelativeHumidity(10.3))]
+    #[case(RelativeHumidity(0.0), RelativeHumidity(0.09))]
+    #[case(RelativeHumidity(98.5), RelativeHumidity(99.9))]
     fn test_relative_humidity_ne(#[case] a: RelativeHumidity, #[case] b: RelativeHumidity) {
         assert_ne!(a, b);
     }
 
     #[rstest]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity::new(45.59).unwrap() }, 8.43)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity::new(45.59).unwrap() }, 8.43)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(2.93), relative_humidity: RelativeHumidity::new(34.71).unwrap() }, 2.06)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(107.7), relative_humidity: RelativeHumidity::new(74.91).unwrap() }, 42.49)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity(45.59) }, 8.43)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity(45.59) }, 8.43)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(2.93), relative_humidity: RelativeHumidity(34.71) }, 2.06)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(107.7), relative_humidity: RelativeHumidity(74.91) }, 42.49)]
     fn test_absolute_humidity_computation<T: Temperature>(
         #[case] input: TemperatureAndRelativeHumidity<T>,
         #[case] expected_absolute_humidity: AbsoluteHumidity,
@@ -243,10 +249,10 @@ mod tests {
     }
 
     #[rstest]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity::new(45.59).unwrap() }, Celsius(8.96))]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity::new(45.59).unwrap() }, Fahrenheit(48.13))]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(2.93), relative_humidity: RelativeHumidity::new(34.71).unwrap() }, Celsius(-11.16))]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(107.7), relative_humidity: RelativeHumidity::new(74.91).unwrap() }, Fahrenheit(98.01))]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity(45.59) }, Celsius(8.96))]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity(45.59) }, Fahrenheit(48.13))]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(2.93), relative_humidity: RelativeHumidity(34.71) }, Celsius(-11.16))]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(107.7), relative_humidity: RelativeHumidity(74.91) }, Fahrenheit(98.01))]
     fn test_dew_point_temperature_computation<T: Temperature>(
         #[case] input: TemperatureAndRelativeHumidity<T>,
         #[case] expected_dew_point: T,
@@ -259,16 +265,18 @@ mod tests {
     }
 
     #[rstest]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(27.), relative_humidity: RelativeHumidity::new(40.).unwrap() }, Celsius(26.86), Comfort::NoDiscomfort)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(29.), relative_humidity: RelativeHumidity::new(50.).unwrap() }, Celsius(29.65), Comfort::NoDiscomfort)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(31.), relative_humidity: RelativeHumidity::new(60.).unwrap() }, Celsius(34.84), Comfort::SomeDiscomfort)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(32.), relative_humidity: RelativeHumidity::new(70.).unwrap() }, Celsius(40.41), Comfort::GreatDiscomfort)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(34.), relative_humidity: RelativeHumidity::new(80.).unwrap() }, Celsius(52.2), Comfort::Dangerous)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(36.), relative_humidity: RelativeHumidity::new(90.).unwrap() }, Celsius(69.2), Comfort::HeatStrokeImminent)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(37.5), relative_humidity: RelativeHumidity::new(100.).unwrap() }, Celsius(88.71), Comfort::HeatStrokeImminent)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(80.6), relative_humidity: RelativeHumidity::new(40.).unwrap() }, Fahrenheit(80.346), Comfort::NoDiscomfort)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(89.6), relative_humidity: RelativeHumidity::new(70.).unwrap() }, Fahrenheit(104.738), Comfort::GreatDiscomfort)]
-    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(96.8), relative_humidity: RelativeHumidity::new(90.).unwrap() }, Fahrenheit(156.56), Comfort::HeatStrokeImminent)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(27.), relative_humidity: RelativeHumidity(40.) }, Celsius(26.86), Comfort::NoDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(29.), relative_humidity: RelativeHumidity(50.) }, Celsius(29.65), Comfort::NoDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(31.), relative_humidity: RelativeHumidity(60.) }, Celsius(34.84), Comfort::SomeDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(32.), relative_humidity: RelativeHumidity(70.) }, Celsius(40.41), Comfort::GreatDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(34.), relative_humidity: RelativeHumidity(80.) }, Celsius(52.2), Comfort::Dangerous)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(36.), relative_humidity: RelativeHumidity(90.) }, Celsius(69.2), Comfort::HeatStrokeImminent)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(37.5), relative_humidity: RelativeHumidity(100.) }, Celsius(88.71), Comfort::HeatStrokeImminent)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(32.7), relative_humidity: RelativeHumidity(10.6) }, Celsius(29.79), Comfort::NoDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Celsius(28.3), relative_humidity: RelativeHumidity(88.2) }, Celsius(34.5), Comfort::SomeDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(80.6), relative_humidity: RelativeHumidity(40.) }, Fahrenheit(80.346), Comfort::NoDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(89.6), relative_humidity: RelativeHumidity(70.) }, Fahrenheit(104.738), Comfort::GreatDiscomfort)]
+    #[case(TemperatureAndRelativeHumidity{ temperature: Fahrenheit(96.8), relative_humidity: RelativeHumidity(90.) }, Fahrenheit(156.56), Comfort::HeatStrokeImminent)]
     fn test_heat_index_computation<T: Temperature>(
         #[case] input: TemperatureAndRelativeHumidity<T>,
         #[case] expected_heat_index: T,
@@ -285,12 +293,12 @@ mod tests {
 
     #[rstest]
     #[case(
-        TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity::new(45.59).unwrap() },
-        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity::new(45.59).unwrap()
-    })]
+        TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity(45.59) },
+        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity(45.59) }
+    )]
     #[case(
-        TemperatureAndRelativeHumidity{ temperature: Celsius(-7.49), relative_humidity: RelativeHumidity::new(73.19).unwrap() },
-        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(18.52), relative_humidity: RelativeHumidity::new(73.19).unwrap() }
+        TemperatureAndRelativeHumidity{ temperature: Celsius(-7.49), relative_humidity: RelativeHumidity(73.19) },
+        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(18.52), relative_humidity: RelativeHumidity(73.19) }
     )]
     fn test_temperature_and_relative_humidity_celsius_to_fahrenheit_conversion(
         #[case] input: TemperatureAndRelativeHumidity<Celsius>,
@@ -302,12 +310,12 @@ mod tests {
 
     #[rstest]
     #[case(
-        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity::new(45.59).unwrap() },
-        TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity::new(45.59).unwrap() }
+        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(70.12), relative_humidity: RelativeHumidity(45.59) },
+        TemperatureAndRelativeHumidity{ temperature: Celsius(21.18), relative_humidity: RelativeHumidity(45.59) }
     )]
     #[case(
-        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(18.52), relative_humidity: RelativeHumidity::new(73.19).unwrap() },
-        TemperatureAndRelativeHumidity{ temperature: Celsius(-7.49), relative_humidity: RelativeHumidity::new(73.19).unwrap() }
+        TemperatureAndRelativeHumidity{ temperature: Fahrenheit(18.52), relative_humidity: RelativeHumidity(73.19) },
+        TemperatureAndRelativeHumidity{ temperature: Celsius(-7.49), relative_humidity: RelativeHumidity(73.19) }
     )]
     fn test_temperature_and_relative_humidity_fahrenheit_to_celsius_conversion(
         #[case] input: TemperatureAndRelativeHumidity<Fahrenheit>,
